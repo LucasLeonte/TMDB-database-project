@@ -1,0 +1,19 @@
+# Environment variables & secrets (NEVER commit to GitHub)
+.env
+.env.*
+!.env.example
+
+# Grote datasets (voorkomt trage git commits & 100MB GitHub limiet)
+*.csv
+
+# Docker volume data / backups
+*.dump
+*.tar
+*.sql.gz
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
