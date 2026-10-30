@@ -1,8 +1,6 @@
 -- =============================================================================
 -- TMDB TV Shows Database – DDL Script
 -- RDBMS  : PostgreSQL 16
--- Auteur : Data Management Project – Bachelor Toegepaste Informatica
--- Datum  : 2026
 -- =============================================================================
 -- Voer dit script uit met:
 --   psql -U tmdb_admin -d tmdb -f 01_schema.sql
@@ -63,18 +61,16 @@ CREATE TYPE show_type AS ENUM (
 
 -- ----------------------------------------------------------------------------
 -- languages
--- Bevat ISO-639-1 taalcodes en de volledige naam (bijv. 'en' → 'English').
+-- Bevat ISO-639-1 taalcodes (bijv. 'en', 'es', 'fr').
 -- ----------------------------------------------------------------------------
 CREATE TABLE languages (
     id   INT         GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     code VARCHAR(10) NOT NULL,
-    name VARCHAR(100) NOT NULL,
     CONSTRAINT uq_languages_code UNIQUE (code)
 );
 
 COMMENT ON TABLE  languages      IS 'ISO-639-1 taalcodes die voorkomen in de TMDB-dataset.';
 COMMENT ON COLUMN languages.code IS 'Twee- of drieletter ISO-taalcode (bijv. ''en'', ''fr'').';
-COMMENT ON COLUMN languages.name IS 'Volledige naam van de taal (bijv. ''English'').';
 
 
 -- ----------------------------------------------------------------------------
@@ -86,7 +82,7 @@ CREATE TABLE genres (
     CONSTRAINT uq_genres_name UNIQUE (name)
 );
 
-COMMENT ON TABLE genres IS 'Filmgenres zoals gedefinieerd door TMDB (bijv. ''Drama'', ''Scripted'').';
+COMMENT ON TABLE genres IS 'Filmgenres zoals gedefinieerd door TMDB (bijv. ''Drama'', ''Action'').';
 
 
 -- ----------------------------------------------------------------------------
@@ -98,7 +94,7 @@ CREATE TABLE networks (
     CONSTRAINT uq_networks_name UNIQUE (name)
 );
 
-COMMENT ON TABLE networks IS 'Omroepen / streamingplatforms die een show uitzenden (bijv. ''Netflix'', ''HBO'').';
+COMMENT ON TABLE networks IS 'Streamingplatforms die een show uitzenden (bijv. ''Netflix'', ''HBO'').';
 
 
 -- ----------------------------------------------------------------------------
@@ -146,10 +142,8 @@ CREATE TABLE users (
     id            INT           GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username      VARCHAR(100)  NOT NULL,
     password_hash VARCHAR(255)  NOT NULL,
-    email         VARCHAR(255),
     created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_users_username UNIQUE (username),
-    CONSTRAINT uq_users_email    UNIQUE (email),
     CONSTRAINT chk_users_username_length CHECK (LENGTH(username) >= 3)
 );
 
@@ -162,7 +156,7 @@ COMMENT ON COLUMN users.password_hash IS 'Bcrypt-hash van het wachtwoord; nooit 
 -- =============================================================================
 
 CREATE TABLE shows (
-    -- Primaire sleutel overgenomen uit TMDB (niet gegenereerd; TMDB id is leidend)
+    -- Primaire sleutel overgenomen uit TMDB (niet gegenereerd)
     id                 BIGINT        PRIMARY KEY,
 
     -- Titels
@@ -179,7 +173,7 @@ CREATE TABLE shows (
 
     -- Beschrijving
     overview           TEXT,
-    tagline            TEXT,
+    tagline            VARCHAR(1000),
 
     -- Metadata
     adult              BOOLEAN       NOT NULL DEFAULT FALSE,
@@ -196,9 +190,6 @@ CREATE TABLE shows (
     popularity         NUMERIC(12,3) CHECK (popularity >= 0),
     episode_run_time   INT           CHECK (episode_run_time >= 0),  -- minuten
 
-    -- Taal van oorsprong (ISO-code, FK naar languages)
-    original_language  VARCHAR(10),
-
     -- Enum-kolommen
     status             show_status,
     type               show_type,
@@ -206,11 +197,6 @@ CREATE TABLE shows (
     -- Audit
     created_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     updated_at         TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-
-    -- Referentiële integriteit
-    CONSTRAINT fk_shows_original_language
-        FOREIGN KEY (original_language) REFERENCES languages (code)
-        ON UPDATE CASCADE ON DELETE SET NULL,
 
     -- Logische datumvolgorde
     CONSTRAINT chk_shows_air_dates
@@ -221,7 +207,7 @@ COMMENT ON TABLE  shows                  IS 'Kerntabel: elke rij is één TV-sho
 COMMENT ON COLUMN shows.id               IS 'TMDB show-id; overgenomen uit de bron, niet gegenereerd.';
 COMMENT ON COLUMN shows.vote_average     IS 'Gemiddelde score 0–10 zoals berekend door TMDB.';
 COMMENT ON COLUMN shows.popularity       IS 'TMDB-populariteitsindex (zwevend getal).';
-COMMENT ON COLUMN shows.episode_run_time IS 'Typische afleveringsduur in minuten.';
+COMMENT ON COLUMN shows.episode_run_time IS 'Typische afleveringsduur in minuten, 0 bij afwezigheid van gegevens.';
 
 
 -- =============================================================================
@@ -230,7 +216,7 @@ COMMENT ON COLUMN shows.episode_run_time IS 'Typische afleveringsduur in minuten
 
 -- ----------------------------------------------------------------------------
 -- show_languages
--- Alle talen (spoken_languages) geassocieerd met een show.
+-- Alle talen (languages) geassocieerd met een show.
 -- ----------------------------------------------------------------------------
 CREATE TABLE show_languages (
     show_id     BIGINT NOT NULL,
@@ -242,7 +228,7 @@ CREATE TABLE show_languages (
         FOREIGN KEY (language_id) REFERENCES languages (id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE show_languages IS 'Koppelt shows aan gesproken talen (spoken_languages in TMDB).';
+COMMENT ON TABLE show_languages IS 'Koppelt shows aan talen (languages in TMDB).';
 
 
 -- ----------------------------------------------------------------------------
@@ -274,7 +260,7 @@ CREATE TABLE show_networks (
         FOREIGN KEY (network_id) REFERENCES networks (id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE show_networks IS 'Koppelt shows aan omroepen/streamingplatforms.';
+COMMENT ON TABLE show_networks IS 'Koppelt shows aan streamingplatforms.';
 
 
 -- ----------------------------------------------------------------------------
@@ -340,8 +326,8 @@ CREATE TABLE user_favorites (
         FOREIGN KEY (show_id) REFERENCES shows (id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE  user_favorites          IS 'Bijhoudt welke shows een gebruiker als favoriet heeft gemarkeerd.';
-COMMENT ON COLUMN user_favorites.added_at IS 'Tijdstip waarop de favoriet werd toegevoegd (UTC).';
+COMMENT ON TABLE  user_favorites          IS 'Houd bij welke shows een gebruiker als favoriet heeft gemarkeerd.';
+COMMENT ON COLUMN user_favorites.added_at IS 'Tijdstip waarop favoriet werd toegevoegd (UTC).';
 
 
 -- =============================================================================
@@ -377,9 +363,6 @@ CREATE INDEX idx_show_creators_creator_id     ON show_creators             (crea
 -- Favorietenlijst per gebruiker
 CREATE INDEX idx_user_favorites_user_id ON user_favorites (user_id);
 
--- Snel zoeken op originele taal in shows
-CREATE INDEX idx_shows_original_language ON shows (original_language);
-
 
 -- =============================================================================
 -- VIEWS
@@ -387,7 +370,7 @@ CREATE INDEX idx_shows_original_language ON shows (original_language);
 
 -- ----------------------------------------------------------------------------
 -- vw_show_overview
--- Denormalized overzicht voor snelle rapportage (joins al gedaan).
+-- Denormalized overzicht voor snelle rapportage.
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW vw_show_overview AS
 SELECT
@@ -404,14 +387,11 @@ SELECT
     s.vote_count,
     s.popularity,
     s.in_production,
-    s.adult,
-    l.code   AS original_language_code,
-    l.name   AS original_language_name
-FROM shows s
-LEFT JOIN languages l ON l.code = s.original_language;
+    s.adult
+FROM shows s;
 
 COMMENT ON VIEW vw_show_overview IS
-    'Gedenormaliseerd overzicht van elke show inclusief originele taal. Handig voor rapportage.';
+    'Gedenormaliseerd overzicht van elke show. Handig voor rapportage.';
 
 
 -- ----------------------------------------------------------------------------
