@@ -169,7 +169,7 @@ CREATE TABLE shows (
 
     -- Beoordelingen
     vote_count         INT           NOT NULL DEFAULT 0 CHECK (vote_count   >= 0),
-    vote_average       NUMERIC(4,3)  NOT NULL DEFAULT 0 CHECK (vote_average BETWEEN 0 AND 10),
+    vote_average       NUMERIC(5,3)  NOT NULL DEFAULT 0 CHECK (vote_average BETWEEN 0 AND 10),
 
     -- Beschrijving
     overview           TEXT,
