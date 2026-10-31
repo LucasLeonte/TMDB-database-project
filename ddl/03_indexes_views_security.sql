@@ -183,6 +183,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user') THEN
         CREATE ROLE app_user LOGIN PASSWORD 'app_secret';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user') THEN
+        CREATE ROLE admin_user LOGIN PASSWORD 'admin_secret';
+    END IF;
 END $$;
 
 -- Rol-hiërarchie koppelen
@@ -210,6 +213,7 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO admin_role;
 GRANT readonly_role TO readonly_user;
 GRANT analyst_role  TO analyst_user;
 GRANT app_role      TO app_user;
+GRANT admin_role    TO admin_user;
 
 
 -- =============================================================================
@@ -219,14 +223,13 @@ GRANT app_role      TO app_user;
 ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 
 -- Verwijder bestaande policies indien ze al bestaan
-DROP POLICY IF EXISTS policy_user_favorites_self  ON user_favorites;
-DROP POLICY IF EXISTS policy_user_favorites_admin ON user_favorites;
+DROP POLICY IF EXISTS policy_user_favorites  ON user_favorites;
 
 -- Eigenaarspolicy: een gebruiker ziet/bewerkt enkel rijen waar user_id = zijn eigen id.
 -- current_setting('app.current_user_id') wordt door de applicatie ingesteld via
 --   SET LOCAL app.current_user_id = '<id>';
 -- vóór elke transactie.
-CREATE POLICY policy_user_favorites_self
+CREATE POLICY policy_user_favorites
     ON user_favorites
     FOR ALL
     USING      (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT)
