@@ -56,7 +56,7 @@ CREATE INDEX idx_user_favorites_user_id ON user_favorites (user_id);
 
 -- ----------------------------------------------------------------------------
 -- vw_show_overview
--- Denormalized overzicht voor snelle rapportage.
+-- Overzicht voor snelle rapportage.
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW vw_show_overview AS
 SELECT
@@ -77,7 +77,27 @@ SELECT
 FROM shows s;
 
 COMMENT ON VIEW vw_show_overview IS
-    'Gedenormaliseerd overzicht van elke show. Handig voor rapportage.';
+    'Overzicht van elke show. Handig voor rapportage.';
+
+
+-- ----------------------------------------------------------------------------
+-- vw_network_stats
+-- Statistieken per netwerk.
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW vw_network_stats AS
+SELECT
+    n.name                          AS network,
+    COUNT(sn.show_id)               AS total_shows,
+    ROUND(AVG(s.vote_average), 2)   AS avg_vote_average,
+    ROUND(AVG(s.popularity),   2)   AS avg_popularity
+FROM networks n
+JOIN show_networks sn ON sn.network_id = n.id
+JOIN shows        s  ON s.id          = sn.show_id
+GROUP BY n.name
+ORDER BY total_shows DESC;
+
+COMMENT ON VIEW vw_network_stats IS
+    'Statistieken per streamingplatform.';
 
 
 -- ----------------------------------------------------------------------------
@@ -88,7 +108,7 @@ CREATE OR REPLACE VIEW vw_genre_stats AS
 SELECT
     g.name                          AS genre,
     COUNT(sg.show_id)               AS total_shows,
-    ROUND(AVG(s.vote_average), 3)   AS avg_vote_average,
+    ROUND(AVG(s.vote_average), 2)   AS avg_vote_average,
     ROUND(AVG(s.popularity),   2)   AS avg_popularity,
     SUM(s.vote_count)               AS total_votes
 FROM genres g
@@ -102,35 +122,15 @@ COMMENT ON VIEW vw_genre_stats IS
 
 
 -- ----------------------------------------------------------------------------
--- vw_network_stats
--- Statistieken per netwerk.
--- ----------------------------------------------------------------------------
-CREATE OR REPLACE VIEW vw_network_stats AS
-SELECT
-    n.name                          AS network,
-    COUNT(sn.show_id)               AS total_shows,
-    ROUND(AVG(s.vote_average), 3)   AS avg_vote_average,
-    ROUND(AVG(s.popularity),   2)   AS avg_popularity
-FROM networks n
-JOIN show_networks sn ON sn.network_id = n.id
-JOIN shows        s  ON s.id          = sn.show_id
-GROUP BY n.name
-ORDER BY total_shows DESC;
-
-COMMENT ON VIEW vw_network_stats IS
-    'Statistieken per omroep/streamingplatform.';
-
-
--- ----------------------------------------------------------------------------
 -- vw_top_shows_by_genre
--- Top 10 shows per genre op basis van vote_average (vereist PostgreSQL window functions).
+-- Top 20 shows per genre op basis van vote_average.
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW vw_top_shows_by_genre AS
 SELECT *
 FROM (
     SELECT
-        g.name                                                       AS genre,
-        s.name                                                       AS show_name,
+        g.name AS genre,
+        s.name AS show_name,
         s.vote_average,
         s.vote_count,
         s.popularity,
@@ -140,10 +140,10 @@ FROM (
     JOIN shows      s  ON s.id        = sg.show_id
     WHERE s.vote_count >= 100   -- minimale drempel om betrouwbaar te zijn
 ) ranked
-WHERE rank_in_genre <= 10;
+WHERE rank_in_genre <= 20;
 
 COMMENT ON VIEW vw_top_shows_by_genre IS
-    'Top 10 best beoordeelde shows per genre (minimaal 100 stemmen).';
+    'Top 20 best beoordeelde shows per genre (minimaal 100 stemmen).';
 
 
 -- =============================================================================
@@ -229,17 +229,8 @@ DROP POLICY IF EXISTS policy_user_favorites_admin ON user_favorites;
 CREATE POLICY policy_user_favorites_self
     ON user_favorites
     FOR ALL
-    USING      (user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT)
-    WITH CHECK (user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT);
-
--- admin_role mag alle rijen zien (bypass RLS via BYPASSRLS privilege in productie,
--- of via een aparte bypass-policy)
-CREATE POLICY policy_user_favorites_admin
-    ON user_favorites
-    FOR ALL
-    TO admin_role
-    USING (TRUE)
-    WITH CHECK (TRUE);
+    USING      (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT)
+    WITH CHECK (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT);
 
 -- =============================================================================
 -- EINDE SCRIPT
