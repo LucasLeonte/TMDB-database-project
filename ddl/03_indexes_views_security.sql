@@ -1,21 +1,39 @@
 -- =============================================================================
--- INDEXEN  – B-Tree (standaard in PostgreSQL)
+-- EXTENSIES
 -- =============================================================================
 
--- Zoeken op naam / titels (ILIKE '%...%' → gin met pg_trgm is beter,
--- maar B-Tree volstaat voor prefix-zoekopdrachten en exacte matches)
-CREATE INDEX idx_shows_name           ON shows (name);
-CREATE INDEX idx_shows_original_name  ON shows (original_name);
+-- pg_trgm extensie activeren voor trigram-matching & GIN indexering
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Sorteren / filteren op datum
+-- =============================================================================
+-- INDEXEN
+-- =============================================================================
+
+-- Verwijder bestaande indexen indien ze al bestaan
+DROP INDEX IF EXISTS idx_shows_name;
+DROP INDEX IF EXISTS idx_shows_original_name;
+DROP INDEX IF EXISTS idx_shows_first_air_date;
+DROP INDEX IF EXISTS idx_shows_last_air_date;
+DROP INDEX IF EXISTS idx_shows_popularity;
+DROP INDEX IF EXISTS idx_shows_vote_average;
+DROP INDEX IF EXISTS idx_show_languages_language_id;
+DROP INDEX IF EXISTS idx_show_genres_genre_id;
+DROP INDEX IF EXISTS idx_show_networks_network_id;
+DROP INDEX IF EXISTS idx_show_prod_companies_comp_id;
+DROP INDEX IF EXISTS idx_show_prod_countries_coun_id;
+DROP INDEX IF EXISTS idx_show_creators_creator_id;
+DROP INDEX IF EXISTS idx_user_favorites_user_id;
+
+-- Zoeken op naam / titels: GIN indexen met pg_trgm
+-- Maakt snelle ILIKE '%...%' (substring), regex en trigram fuzzy searches mogelijk
+CREATE INDEX idx_shows_name           ON shows USING gin (name gin_trgm_ops);
+CREATE INDEX idx_shows_original_name  ON shows USING gin (original_name gin_trgm_ops);
+
+-- Sorteren / filteren op datum (B-Tree)
 CREATE INDEX idx_shows_first_air_date ON shows (first_air_date);
 CREATE INDEX idx_shows_last_air_date  ON shows (last_air_date);
 
--- Filtering op status en type (ENUM)
-CREATE INDEX idx_shows_status         ON shows (status);
-CREATE INDEX idx_shows_type           ON shows (type);
-
--- Rangschikking op populariteit / score
+-- Rangschikking op populariteit / score (B-Tree)
 CREATE INDEX idx_shows_popularity     ON shows (popularity DESC);
 CREATE INDEX idx_shows_vote_average   ON shows (vote_average DESC);
 
@@ -200,6 +218,10 @@ GRANT app_role      TO app_user;
 
 ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 
+-- Verwijder bestaande policies indien ze al bestaan
+DROP POLICY IF EXISTS policy_user_favorites_self  ON user_favorites;
+DROP POLICY IF EXISTS policy_user_favorites_admin ON user_favorites;
+
 -- Eigenaarspolicy: een gebruiker ziet/bewerkt enkel rijen waar user_id = zijn eigen id.
 -- current_setting('app.current_user_id') wordt door de applicatie ingesteld via
 --   SET LOCAL app.current_user_id = '<id>';
@@ -222,4 +244,3 @@ CREATE POLICY policy_user_favorites_admin
 -- =============================================================================
 -- EINDE SCRIPT
 -- =============================================================================
-

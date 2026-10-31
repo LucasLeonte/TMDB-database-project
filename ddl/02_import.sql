@@ -177,13 +177,13 @@ SELECT DISTINCT ON (id::BIGINT)
     id::BIGINT,
     name,
     NULLIF(TRIM(original_name), ''),
-    NULLIF(number_of_seasons,  '')::INT,
+    NULLIF(number_of_seasons, '')::INT,
     NULLIF(number_of_episodes, '')::INT,
-    COALESCE(NULLIF(vote_count,   '')::INT,           0),
+    COALESCE(NULLIF(vote_count, '')::INT, 0),
     LEAST(COALESCE(NULLIF(vote_average, '')::NUMERIC, 0), 10),
     NULLIF(TRIM(overview), ''),
     NULLIF(TRIM(tagline),  ''),
-    -- Python/pandas schrijft 'True'/'False'; we normaliseren naar boolean
+    -- Python/pandas schrijft 'True'/'False'; normaliseren naar boolean
     CASE UPPER(TRIM(adult))
         WHEN 'TRUE'  THEN TRUE
         WHEN '1'     THEN TRUE
