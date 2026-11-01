@@ -7,8 +7,7 @@
 --   1. Kopieer de CSV naar de container:
 --        docker cp TMDB_tv_dataset_v3.csv tmdb_postgres:/tmp/TMDB_tv_dataset_v3.csv
 --   2. Voer dit script uit:
---        docker cp db/import_full_dataset.sql tmdb_postgres:/tmp/import_full_dataset.sql
---        docker exec tmdb_postgres psql -U tmdb_admin -d tmdb -f /tmp/import_full_dataset.sql
+--        docker exec -i tmdb_postgres psql -U tmdb_admin -d tmdb < db/import_full_dataset.sql
 -- =============================================================================
 
 BEGIN;

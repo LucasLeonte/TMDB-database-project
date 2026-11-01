@@ -1,17 +1,16 @@
 services:
-  postgres:
-    image: postgres:16
-    container_name: tmdb_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-tmdb}
-      POSTGRES_USER: ${POSTGRES_USER:-tmdb_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tmdb_secret}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./ddl:/docker-entrypoint-initdb.d   # scripts in /ddl worden automatisch uitgevoerd bij eerste start
+    postgres:
+        image: postgres:16
+        container_name: tmdb_postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${POSTGRES_DB:-tmdb}
+            POSTGRES_USER: ${POSTGRES_USER:-tmdb_admin}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tmdb_secret}
+        ports:
+            - "${POSTGRES_PORT:-5432}:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+    postgres_data:
