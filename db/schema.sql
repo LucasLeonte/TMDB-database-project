@@ -209,6 +209,23 @@ COMMENT ON COLUMN shows.vote_average     IS 'Gemiddelde score 0–10 zoals berek
 COMMENT ON COLUMN shows.popularity       IS 'TMDB-populariteitsindex (zwevend getal).';
 COMMENT ON COLUMN shows.episode_run_time IS 'Typische afleveringsduur in minuten, 0 bij afwezigheid van gegevens.';
 
+-- Keep the audit timestamp current whenever a show is updated.
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_shows_updated_at ON shows;
+CREATE TRIGGER trg_shows_updated_at
+    BEFORE UPDATE ON shows
+    FOR EACH ROW
+    EXECUTE FUNCTION set_updated_at();
+
 
 -- =============================================================================
 -- KOPPELTABELLEN  (many-to-many)
@@ -354,7 +371,6 @@ DROP INDEX IF EXISTS idx_show_networks_network_id;
 DROP INDEX IF EXISTS idx_show_prod_companies_comp_id;
 DROP INDEX IF EXISTS idx_show_prod_countries_coun_id;
 DROP INDEX IF EXISTS idx_show_creators_creator_id;
-DROP INDEX IF EXISTS idx_user_favorites_user_id;
 
 -- Zoeken op naam / titels: GIN indexen met pg_trgm
 -- Maakt snelle ILIKE '%...%' (substring), regex en trigram fuzzy searches mogelijk
@@ -377,9 +393,6 @@ CREATE INDEX idx_show_networks_network_id     ON show_networks             (netw
 CREATE INDEX idx_show_prod_companies_comp_id  ON show_production_companies (company_id);
 CREATE INDEX idx_show_prod_countries_coun_id  ON show_production_countries (country_id);
 CREATE INDEX idx_show_creators_creator_id     ON show_creators             (creator_id);
-
--- Favorietenlijst per gebruiker
-CREATE INDEX idx_user_favorites_user_id ON user_favorites (user_id);
 
 
 -- =============================================================================
@@ -425,8 +438,7 @@ SELECT
 FROM networks n
 JOIN show_networks sn ON sn.network_id = n.id
 JOIN shows        s  ON s.id          = sn.show_id
-GROUP BY n.name
-ORDER BY total_shows DESC;
+GROUP BY n.name;
 
 COMMENT ON VIEW vw_network_stats IS
     'Statistieken per streamingplatform.';
@@ -447,7 +459,7 @@ FROM genres g
 JOIN show_genres sg ON sg.genre_id = g.id
 JOIN shows      s  ON s.id        = sg.show_id
 GROUP BY g.name
-ORDER BY avg_vote_average DESC;
+;
 
 COMMENT ON VIEW vw_genre_stats IS
     'Geaggregeerde statistieken (gemiddelde score, populariteit, votes) per genre.';
@@ -524,15 +536,19 @@ END $$;
 GRANT readonly_role TO analyst_role;   -- analisten erven leesrechten
 GRANT readonly_role TO app_role;       -- app-gebruiker erft leesrechten
 
--- Rechten readonly_role: lees alle tabellen en views
+-- Rechten readonly_role: lees alle tabellen en views (behalve users)
 GRANT USAGE  ON SCHEMA public                     TO readonly_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public       TO readonly_role;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public    TO readonly_role;
+REVOKE SELECT ON TABLE users FROM readonly_role, analyst_role, app_role;
 
 -- Rechten analyst_role: mag ook tijdelijke tabellen aanmaken
-GRANT TEMPORARY ON DATABASE tmdb TO analyst_role;
+DO $$
+BEGIN
+    EXECUTE format('GRANT TEMPORARY ON DATABASE %I TO analyst_role', current_database());
+END $$;
 
--- Rechten app_role: mag user-gerelateerde tabellen bewerken
+-- Rechten app_role: beheert gebruikers en favorieten via de backend.
 GRANT INSERT, UPDATE, DELETE ON TABLE users          TO app_role;
 GRANT INSERT, UPDATE, DELETE ON TABLE user_favorites TO app_role;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public        TO app_role;

@@ -83,13 +83,15 @@ WITH (
 
 DELETE FROM staging_shows s
 USING (
-    SELECT id, MAX(CAST(NULLIF(vote_count,'') AS INT)) AS max_vc
+    SELECT ctid,
+           ROW_NUMBER() OVER (
+               PARTITION BY id
+               ORDER BY CAST(NULLIF(vote_count, '') AS INT) DESC NULLS LAST, ctid
+           ) AS row_number
     FROM staging_shows
-    GROUP BY id
-    HAVING COUNT(*) > 1
-) dup
-WHERE s.id = dup.id
-  AND CAST(NULLIF(s.vote_count,'') AS INT) IS DISTINCT FROM dup.max_vc;
+) duplicate_rows
+WHERE s.ctid = duplicate_rows.ctid
+  AND duplicate_rows.row_number > 1;
 
 
 -- =============================================================================
@@ -214,7 +216,26 @@ SELECT DISTINCT ON (id::BIGINT)
     NULLIF(TRIM(type),   '')::show_type
 FROM staging_shows
 ORDER BY id::BIGINT, NULLIF(vote_count, '')::INT DESC NULLS LAST
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    original_name = EXCLUDED.original_name,
+    number_of_seasons = EXCLUDED.number_of_seasons,
+    number_of_episodes = EXCLUDED.number_of_episodes,
+    vote_count = EXCLUDED.vote_count,
+    vote_average = EXCLUDED.vote_average,
+    overview = EXCLUDED.overview,
+    tagline = EXCLUDED.tagline,
+    adult = EXCLUDED.adult,
+    backdrop_path = EXCLUDED.backdrop_path,
+    poster_path = EXCLUDED.poster_path,
+    homepage = EXCLUDED.homepage,
+    first_air_date = EXCLUDED.first_air_date,
+    last_air_date = EXCLUDED.last_air_date,
+    in_production = EXCLUDED.in_production,
+    popularity = EXCLUDED.popularity,
+    episode_run_time = EXCLUDED.episode_run_time,
+    status = EXCLUDED.status,
+    type = EXCLUDED.type;
 
 
 -- =============================================================================
@@ -295,14 +316,71 @@ ON CONFLICT DO NOTHING;
 
 
 -- =============================================================================
--- STAP 7: Opruimen – verwijder de staging-tabel
+-- STAP 7: Post-import validatie
+-- =============================================================================
+
+DO $$
+DECLARE
+    v_staging_rows BIGINT;
+    v_duplicate_ids BIGINT;
+    v_missing_shows BIGINT;
+BEGIN
+    SELECT COUNT(*) INTO v_staging_rows
+    FROM staging_shows;
+
+    IF v_staging_rows = 0 THEN
+        RAISE EXCEPTION 'Import validation failed: staging_shows is empty';
+    END IF;
+
+    SELECT COUNT(*) INTO v_duplicate_ids
+    FROM (
+        SELECT id
+        FROM staging_shows
+        GROUP BY id
+        HAVING COUNT(*) > 1
+    ) duplicates;
+
+    IF v_duplicate_ids > 0 THEN
+        RAISE EXCEPTION 'Import validation failed: % duplicate show IDs remain', v_duplicate_ids;
+    END IF;
+
+    SELECT COUNT(*) INTO v_missing_shows
+    FROM staging_shows s
+    LEFT JOIN shows sh ON sh.id = s.id::BIGINT
+    WHERE sh.id IS NULL;
+
+    IF v_missing_shows > 0 THEN
+        RAISE EXCEPTION 'Import validation failed: % staged shows are missing from shows', v_missing_shows;
+    END IF;
+END $$;
+
+
+-- =============================================================================
+-- STAP 8: Opruimen – verwijder de staging-tabel
 -- =============================================================================
 
 DROP TABLE IF EXISTS staging_shows;
 
 
+-- Refresh planner statistics after the bulk load.
+ANALYZE
+    shows,
+    languages,
+    genres,
+    networks,
+    production_companies,
+    production_countries,
+    creators,
+    show_languages,
+    show_genres,
+    show_networks,
+    show_production_companies,
+    show_production_countries,
+    show_creators;
+
+
 -- =============================================================================
--- STAP 8: Snelle validatie – tel rijen per tabel
+-- STAP 9: Snelle validatie – tel rijen per tabel
 -- =============================================================================
 
 DO $$
