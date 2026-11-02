@@ -17,5 +17,5 @@
 .DS_Store
 Thumbs.db
 
-# Benchmark files
-benchmark
+# Benchmark, ERD
+resources
