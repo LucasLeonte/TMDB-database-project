@@ -54,10 +54,123 @@ De many-to-many-relaties worden opgeslagen in `show_languages`, `show_genres`, `
 
 ### ERD
 
-![Entity Relationship Diagram](resources/ERD.png)
+```mermaid
+erDiagram
+    %% Core Entity
+    shows {
+        id bigint PK
+        name varchar
+        original_name varchar
+        number_of_seasons int
+        number_of_episodes int
+        vote_count int
+        vote_average numeric
+        overview text
+        tagline varchar
+        adult boolean
+        backdrop_path varchar
+        poster_path varchar
+        homepage varchar
+        first_air_date date
+        last_air_date date
+        in_production boolean
+        popularity numeric
+        episode_run_time int
+        status varchar
+        type varchar
+        created_at timestamp
+        updated_at timestamp
+    }
 
-De interactieve versie van het ERD staat op
-[Mermaid](https://mermaid.ai/live/edit#pako:eNqtlltr2zAUx7-KEPQtLY3dxK5fu-2lDMZgLyMgTizFFrUlI8lpszTffZKT2G58y-gcCPhc_vr56Oiyx7GkDEeYqS8cEgX5SiD73NygJ6kY-ioMN7ujTafyVaP98cU9nKI1T7gw6MdzYxWQM7QFFaegGqtULhIy0u8WZb5misgN0Qy0FBpZ2T43K7i2xBf-rTSMxLK0KF07bJmChDkRpnjcYrKOLWevyLC3VpKBJOOiBxJomRm0ljJjIBrzGuIXqmRBCjBpN6uQ2lj2fmcqc1Y4uI5nw5U2BLgiFAxD7q9xZjDs44IUStIyNlyKLm0hizIDZWe1W5BTcYkqBTHcztOHYmoDptRdUrMrevhjxSwWJWCQk7LJedF4y4IOeA-rE2wGIiltaS5b7rLfXAOfh0e_ni9UXNOSXqnK027hGfr23C7xMYfUQzb-Wj1hQk0Ctju-DVhDdFUm2KqEUTDBzKtUL59G69OZgDuljOI1DWpXbV6A4J-v4pTmBPYxZ3c9tt1s1P_G7tGcxHY549jVUpTq06h9OlN4x5RRvFKzSTYX08tXTQtobVuOkhR0-i870aEBIBvY2jPKfCx-5Rn-uomPB0rHtzh7yv5kGbjJ1ykvdPucfX-_vZX7y_0rQitsfxcb5HjskOpp22lLnkwjUUNi9UbRlquNo5FDkr0Lui3fG3C1wlXDnhfk4LDngKsVhoatF1d7qNo4GtleRqfAi5Zua34YujcOz3CiOMWRUSWbYXtJyMG94mplrLBJWc5W2AVTUC9O-GBzbH1_S5mf05QskxRHG8i0fTse-Kc7Zh3CBGXqydUIRw9eWGngaI_fcHS78B7vQj8IHu8fF-FDMPdneGfNvu_dhUtvsfTD-cIL5sFhhv9Uw87v_NALw2B57z34wXw5D2aYUW5L9f14x62uuoe_BhVzxQ).
+    languages {
+        id int PK
+        code varchar UK
+    }
+
+    show_languages {
+        show_id bigint PK, FK
+        language_id int PK, FK
+    }
+
+    genres {
+        id int PK
+        name varchar UK
+    }
+    show_genres {
+        show_id bigint PK, FK
+        genre_id int PK, FK
+    }
+
+    networks {
+        id int PK
+        name varchar UK
+    }
+    show_networks {
+        show_id bigint PK, FK
+        network_id int PK, FK
+    }
+
+    production_companies {
+        id int PK
+        name varchar UK
+    }
+    show_production_companies {
+        show_id bigint PK, FK
+        company_id int PK, FK
+    }
+
+    production_countries {
+        id int PK
+        name varchar UK
+    }
+    show_production_countries {
+        show_id bigint PK, FK
+        country_id int PK, FK
+    }
+
+    creators {
+        id int PK
+        name varchar UK
+    }
+    show_creators {
+        show_id bigint PK, FK
+        creator_id int PK, FK
+    }
+
+    users {
+        id int PK
+        username varchar UK
+        password_hash varchar
+        created_at timestamp
+    }
+    user_favorites {
+        user_id bigint PK, FK
+        show_id bigint PK, FK
+        added_at timestamp
+    }
+
+    %% Relationships
+    shows ||--o{ show_languages : ""
+    languages ||--o{ show_languages : ""
+
+    shows ||--o{ show_genres : ""
+    genres ||--o{ show_genres : ""
+
+    shows ||--o{ show_networks : ""
+    networks ||--o{ show_networks : ""
+
+    shows ||--o{ show_production_companies : ""
+    production_companies ||--o{ show_production_companies : ""
+
+    shows ||--o{ show_production_countries : ""
+    production_countries ||--o{ show_production_countries : ""
+
+    shows ||--o{ show_creators : ""
+    creators ||--o{ show_creators : ""
+
+    users ||--o{ user_favorites : ""
+    shows ||--o{ user_favorites : ""
+```
 
 ## Toegang en beveiliging
 
@@ -256,27 +369,27 @@ CREATE INDEX idx_show_networks_network_id ON show_networks (network_id);
 
 #### Test 1: titel zoeken
 
-| Sequential scan                                          | Index scan                                            |
-| -------------------------------------------------------- | ----------------------------------------------------- |
-| ![Sequential scan test 1](resources/benchmark/Seq_1.png) | ![Index scan test 1](resources/benchmark/Index_1.png) |
+| Sequential scan                                | Index scan                                  |
+| ---------------------------------------------- | ------------------------------------------- |
+| ![Sequential scan test 1](benchmark/Seq_1.png) | ![Index scan test 1](benchmark/Index_1.png) |
 
 #### Test 2: datumfilter
 
-| Sequential scan                                          | Index scan                                            |
-| -------------------------------------------------------- | ----------------------------------------------------- |
-| ![Sequential scan test 2](resources/benchmark/Seq_2.png) | ![Index scan test 2](resources/benchmark/Index_2.png) |
+| Sequential scan                                | Index scan                                  |
+| ---------------------------------------------- | ------------------------------------------- |
+| ![Sequential scan test 2](benchmark/Seq_2.png) | ![Index scan test 2](benchmark/Index_2.png) |
 
 #### Test 3: sortering op score
 
-| Sequential scan                                          | Index scan                                            |
-| -------------------------------------------------------- | ----------------------------------------------------- |
-| ![Sequential scan test 3](resources/benchmark/Seq_3.png) | ![Index scan test 3](resources/benchmark/Index_3.png) |
+| Sequential scan                                | Index scan                                  |
+| ---------------------------------------------- | ------------------------------------------- |
+| ![Sequential scan test 3](benchmark/Seq_3.png) | ![Index scan test 3](benchmark/Index_3.png) |
 
 #### Test 4: reverse lookup
 
-| Sequential scan                                          | Index scan                                            |
-| -------------------------------------------------------- | ----------------------------------------------------- |
-| ![Sequential scan test 4](resources/benchmark/Seq_4.png) | ![Index scan test 4](resources/benchmark/Index_4.png) |
+| Sequential scan                                | Index scan                                  |
+| ---------------------------------------------- | ------------------------------------------- |
+| ![Sequential scan test 4](benchmark/Seq_4.png) | ![Index scan test 4](benchmark/Index_4.png) |
 
 ## Projectbestanden
 
@@ -286,7 +399,5 @@ CREATE INDEX idx_show_networks_network_id ON show_networks (network_id);
 ├── db/
 │   ├── schema.sql                 # DDL, seed data, views, indexen en security
 │   └── import_full_dataset.sql    # CSV bulk-import en normalisatie
-└── resources/
-    ├── ERD.png
-    └── benchmark/                 # Indexanalyse-screenshots
+└── benchmark/                     # Indexanalyse-screenshots
 ```
