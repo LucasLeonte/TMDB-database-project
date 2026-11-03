@@ -583,6 +583,17 @@ CREATE POLICY policy_user_favorites
     USING      (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT)
     WITH CHECK (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT);
 
+-- Veilige leesinterface voor de applicatie: de backend krijgt enkel de
+-- username en shows van de in de sessie ingestelde gebruiker.
+CREATE OR REPLACE VIEW vw_user_favorites AS
+    SELECT u.username, s.id, s.name
+    FROM public.user_favorites AS f
+    JOIN public.users AS u ON u.id = f.user_id
+    JOIN public.shows AS s ON s.id = f.show_id
+    WHERE f.user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT;
+
+GRANT SELECT ON vw_user_favorites TO app_role;
+
 
 -- =============================================================================
 -- TMDB Test Data Seed

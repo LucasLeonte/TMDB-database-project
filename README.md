@@ -32,12 +32,11 @@ rechtstreekse databaseverbinding.
   PostgreSQL `COPY`.
 - Normalisatie naar 3NF met aparte dimensietabellen en many-to-many-koppeltabellen.
 - Complexe `SELECT`-query's met `JOIN`, subqueries en `GROUP BY`.
-- **Views** (4) voor showoverzichten, netwerkstatistieken, genrestatistieken en
+- **Views** (5) voor showoverzichten, netwerkstatistieken, genrestatistieken en
   topshows per genre.
 - **Indexen** (12) voor substring-zoekopdrachten (GIN), datums, scores en koppeltabellen.
 - **Sequences** (7) via PostgreSQL identity columns voor alle dimensietabellen.
 - **Databasebeveiliging** met rollen, privileges en Row-Level Security (RLS).
-- Trigger die `updated_at` voor shows automatisch bijwerkt.
 
 ## Database-structuur
 
@@ -46,8 +45,7 @@ in aparte tabellen:
 
 - `languages`, `genres`, `networks`, `production_companies`,
   `production_countries` en `creators`;
-- `users` voor applicatiegebruikers;
-- `user_favorites` voor de persoonlijke favorieten van een gebruiker.
+- `users` voor applicatiegebruikers en `user_favorites` voor de persoonlijke favorieten van een gebruiker.
 
 De many-to-many-relaties worden opgeslagen in `show_languages`, `show_genres`, `show_networks`,
 `show_production_companies`, `show_production_countries` en `show_creators`.
@@ -190,8 +188,11 @@ SET LOCAL app.current_user_id = '1';
 ```
 
 RLS op `user_favorites` gebruikt deze waarde om toegang af te dwingen. Een
-gebruiker kan daardoor alleen eigen favorieten lezen, toevoegen, wijzigen of
-verwijderen; favorieten van andere gebruikers blijven onzichtbaar.
+gebruiker kan daardoor alleen eigen favorieten toevoegen, wijzigen of
+verwijderen; favorieten van andere gebruikers blijven onzichtbaar. Om eigen
+favorieten te bekijken, kan de applicatie de view `vw_user_favorites` gebruiken.
+De view toont alleen de gebruikersnaam en de bijbehorende shows; directe
+leesrechten op `users` blijven ingetrokken.
 
 Wachtwoorden
 worden niet als plaintext opgeslagen: `users.password_hash` bevat een bcrypt-hash. De wachtwoorden in `schema.sql` zijn uitsluitend demo-credentials. Wijzig ze
