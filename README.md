@@ -32,7 +32,7 @@ rechtstreekse databaseverbinding.
   PostgreSQL `COPY`.
 - Normalisatie naar 3NF met aparte dimensietabellen en many-to-many-koppeltabellen.
 - Complexe `SELECT`-query's met `JOIN`, subqueries en `GROUP BY`.
-- **Views** (5) voor showoverzichten, netwerkstatistieken, genrestatistieken en
+- **Views** (4) voor showoverzichten, netwerkstatistieken, genrestatistieken en
   topshows per genre.
 - **Indexen** (12) voor substring-zoekopdrachten (GIN), datums, scores en koppeltabellen.
 - **Sequences** (7) via PostgreSQL identity columns voor alle dimensietabellen.
@@ -188,15 +188,12 @@ SET LOCAL app.current_user_id = '1';
 ```
 
 RLS op `user_favorites` gebruikt deze waarde om toegang af te dwingen. Een
-gebruiker kan daardoor alleen eigen favorieten toevoegen, wijzigen of
-verwijderen; favorieten van andere gebruikers blijven onzichtbaar. Om eigen
-favorieten te bekijken, kan de applicatie de view `vw_user_favorites` gebruiken.
-De view toont alleen de gebruikersnaam en de bijbehorende shows; directe
-leesrechten op `users` blijven ingetrokken.
+gebruiker kan daardoor alleen eigen favorieten zien, toevoegen, wijzigen of
+verwijderen; favorieten van andere gebruikers blijven onzichtbaar.
 
-Wachtwoorden
-worden niet als plaintext opgeslagen: `users.password_hash` bevat een bcrypt-hash. De wachtwoorden in `schema.sql` zijn uitsluitend demo-credentials. Wijzig ze
-voor elke echte deployment en bewaar secrets buiten versiebeheer.
+Wachtwoorden worden niet als plaintext opgeslagen: `users.password_hash` bevat
+een bcrypt-hash. De wachtwoorden in `schema.sql` zijn uitsluitend demo-credentials.
+Wijzig ze voor elke echte deployment en bewaar secrets buiten versiebeheer.
 
 ## Setup
 

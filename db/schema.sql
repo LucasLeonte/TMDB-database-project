@@ -458,8 +458,7 @@ SELECT
 FROM genres g
 JOIN show_genres sg ON sg.genre_id = g.id
 JOIN shows      s  ON s.id        = sg.show_id
-GROUP BY g.name
-;
+GROUP BY g.name;
 
 COMMENT ON VIEW vw_genre_stats IS
     'Geaggregeerde statistieken (gemiddelde score, populariteit, votes) per genre.';
@@ -580,19 +579,9 @@ DROP POLICY IF EXISTS policy_user_favorites  ON user_favorites;
 CREATE POLICY policy_user_favorites
     ON user_favorites
     FOR ALL
-    USING      (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT)
-    WITH CHECK (user_id IS NOT NULL AND user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT);
-
--- Veilige leesinterface voor de applicatie: de backend krijgt enkel de
--- username en shows van de in de sessie ingestelde gebruiker.
-CREATE OR REPLACE VIEW vw_user_favorites AS
-    SELECT u.username, s.id, s.name
-    FROM public.user_favorites AS f
-    JOIN public.users AS u ON u.id = f.user_id
-    JOIN public.shows AS s ON s.id = f.show_id
-    WHERE f.user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT;
-
-GRANT SELECT ON vw_user_favorites TO app_role;
+    TO app_role
+    USING      (user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT) -- Select, Update, Delete
+    WITH CHECK (user_id = NULLIF(current_setting('app.current_user_id', TRUE), '')::INT); -- Insert, Update
 
 
 -- =============================================================================
