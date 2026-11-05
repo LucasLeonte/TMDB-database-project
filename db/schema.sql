@@ -400,21 +400,6 @@ CREATE INDEX idx_show_creators_creator_id     ON show_creators             (crea
 -- =============================================================================
 
 -- ----------------------------------------------------------------------------
--- vw_users_safe
--- Veilige gebruikersgegevens voor de applicatie (zonder wachtwoordhash).
--- ----------------------------------------------------------------------------
-CREATE OR REPLACE VIEW vw_users_safe AS
-SELECT
-    u.id,
-    u.username,
-    u.created_at
-FROM users u;
-
-COMMENT ON VIEW vw_users_safe IS
-    'Veilige gebruikersgegevens voor de applicatie; password_hash is bewust uitgesloten.';
-
-
--- ----------------------------------------------------------------------------
 -- vw_show_overview
 -- Overzicht voor snelle rapportage.
 -- ----------------------------------------------------------------------------
@@ -502,6 +487,20 @@ WHERE rank_in_genre <= 20;
 
 COMMENT ON VIEW vw_top_shows_by_genre IS
     'Top 20 best beoordeelde shows per genre (minimaal 100 stemmen).';
+
+-- ----------------------------------------------------------------------------
+-- vw_users_safe
+-- Veilige gebruikersgegevens voor de applicatie (zonder wachtwoordhash).
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW vw_users_safe AS
+SELECT
+    u.id,
+    u.username,
+    u.created_at
+FROM users u;
+
+COMMENT ON VIEW vw_users_safe IS
+    'Veilige gebruikersgegevens voor de applicatie; password_hash is bewust uitgesloten.';
 
 
 -- =============================================================================

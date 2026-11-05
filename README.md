@@ -172,13 +172,13 @@ erDiagram
 
 ## Toegang en beveiliging
 
-| Actor               | Database-account/rol              | Toegang                                                                                                                             |
-| ------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Beheerder           | `admin_user` / `admin_role`       | Volledig beheer van schema en data.                                                                                                 |
+| Actor               | Database-account/rol              | Toegang                                                                                                                                                                                   |
+| ------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Beheerder           | `admin_user` / `admin_role`       | Volledig beheer van schema en data.                                                                                                                                                       |
 | Webapplicatie       | `app_user` / `app_role`           | Lezen van showdata via `readonly_role`; `SELECT` op `vw_users_safe` (zonder `password_hash`); `INSERT`, `UPDATE` en `DELETE` op `users` en `user_favorites`. Geen leesrechten op `users`. |
-| Data-analist        | `analyst_user` / `analyst_role`   | Lezen via `readonly_role` en tijdelijke views maken voor analyses.                                                                  |
-| Read-only gebruiker | `readonly_user` / `readonly_role` | Alleen `SELECT` op alle tabellen behalve `users`.                                                                                   |
-| Eindgebruiker       | Geen database-account             | Werkt uitsluitend via de webapplicatie.                                                                                             |
+| Data-analist        | `analyst_user` / `analyst_role`   | Lezen via `readonly_role` en tijdelijke tabellen maken voor analyses.                                                                                                                     |
+| Read-only gebruiker | `readonly_user` / `readonly_role` | Alleen `SELECT` op alle tabellen behalve `users`.                                                                                                                                         |
+| Eindgebruiker       | Geen database-account             | Werkt uitsluitend via de webapplicatie.                                                                                                                                                   |
 
 De applicatie stelt per
 transactie de ingelogde gebruiker in:
