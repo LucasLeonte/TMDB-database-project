@@ -400,6 +400,21 @@ CREATE INDEX idx_show_creators_creator_id     ON show_creators             (crea
 -- =============================================================================
 
 -- ----------------------------------------------------------------------------
+-- vw_users_safe
+-- Veilige gebruikersgegevens voor de applicatie (zonder wachtwoordhash).
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW vw_users_safe AS
+SELECT
+    u.id,
+    u.username,
+    u.created_at
+FROM users u;
+
+COMMENT ON VIEW vw_users_safe IS
+    'Veilige gebruikersgegevens voor de applicatie; password_hash is bewust uitgesloten.';
+
+
+-- ----------------------------------------------------------------------------
 -- vw_show_overview
 -- Overzicht voor snelle rapportage.
 -- ----------------------------------------------------------------------------
@@ -540,6 +555,7 @@ GRANT USAGE  ON SCHEMA public                     TO readonly_role;
 GRANT SELECT ON ALL TABLES IN SCHEMA public       TO readonly_role;
 GRANT SELECT ON ALL SEQUENCES IN SCHEMA public    TO readonly_role;
 REVOKE SELECT ON TABLE users FROM readonly_role, analyst_role, app_role;
+REVOKE SELECT ON vw_users_safe FROM readonly_role, analyst_role;
 
 -- Rechten analyst_role: mag ook tijdelijke tabellen aanmaken
 DO $$
@@ -550,6 +566,7 @@ END $$;
 -- Rechten app_role: beheert gebruikers en favorieten via de backend.
 GRANT INSERT, UPDATE, DELETE ON TABLE users          TO app_role;
 GRANT INSERT, UPDATE, DELETE ON TABLE user_favorites TO app_role;
+GRANT SELECT ON vw_users_safe                         TO app_role;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public        TO app_role;
 
 -- admin_role: supersets (in productie toewijzen aan de DBA-loginrol)

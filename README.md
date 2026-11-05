@@ -32,8 +32,8 @@ rechtstreekse databaseverbinding.
   PostgreSQL `COPY`.
 - Normalisatie naar 3NF met aparte dimensietabellen en many-to-many-koppeltabellen.
 - Complexe `SELECT`-query's met `JOIN`, subqueries en `GROUP BY`.
-- **Views** (4) voor showoverzichten, netwerkstatistieken, genrestatistieken en
-  topshows per genre.
+- **Views** (5) voor showoverzichten, netwerkstatistieken, genrestatistieken,
+  topshows per genre en veilige gebruikersgegevens.
 - **Indexen** (12) voor substring-zoekopdrachten (GIN), datums, scores en koppeltabellen.
 - **Sequences** (7) via PostgreSQL identity columns voor alle dimensietabellen.
 - **Databasebeveiliging** met rollen, privileges en Row-Level Security (RLS).
@@ -175,7 +175,7 @@ erDiagram
 | Actor               | Database-account/rol              | Toegang                                                                                                                             |
 | ------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Beheerder           | `admin_user` / `admin_role`       | Volledig beheer van schema en data.                                                                                                 |
-| Webapplicatie       | `app_user` / `app_role`           | Lezen van showdata via `readonly_role`; `INSERT`, `UPDATE` en `DELETE` op `users` en `user_favorites`. Geen leesrechten op `users`. |
+| Webapplicatie       | `app_user` / `app_role`           | Lezen van showdata via `readonly_role`; `SELECT` op `vw_users_safe` (zonder `password_hash`); `INSERT`, `UPDATE` en `DELETE` op `users` en `user_favorites`. Geen leesrechten op `users`. |
 | Data-analist        | `analyst_user` / `analyst_role`   | Lezen via `readonly_role` en tijdelijke views maken voor analyses.                                                                  |
 | Read-only gebruiker | `readonly_user` / `readonly_role` | Alleen `SELECT` op alle tabellen behalve `users`.                                                                                   |
 | Eindgebruiker       | Geen database-account             | Werkt uitsluitend via de webapplicatie.                                                                                             |
