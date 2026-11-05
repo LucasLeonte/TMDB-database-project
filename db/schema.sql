@@ -361,6 +361,8 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- Verwijder bestaande indexen indien ze al bestaan
 DROP INDEX IF EXISTS idx_shows_name;
 DROP INDEX IF EXISTS idx_shows_original_name;
+DROP INDEX IF EXISTS idx_production_companies_name;
+DROP INDEX IF EXISTS idx_creators_name;
 DROP INDEX IF EXISTS idx_shows_first_air_date;
 DROP INDEX IF EXISTS idx_shows_last_air_date;
 DROP INDEX IF EXISTS idx_shows_popularity;
@@ -376,6 +378,10 @@ DROP INDEX IF EXISTS idx_show_creators_creator_id;
 -- Maakt snelle ILIKE '%...%' (substring), regex en trigram fuzzy searches mogelijk
 CREATE INDEX idx_shows_name           ON shows USING gin (name gin_trgm_ops);
 CREATE INDEX idx_shows_original_name  ON shows USING gin (original_name gin_trgm_ops);
+CREATE INDEX idx_production_companies_name
+    ON production_companies USING gin (name gin_trgm_ops);
+CREATE INDEX idx_creators_name
+    ON creators USING gin (name gin_trgm_ops);
 
 -- Sorteren / filteren op datum (B-Tree)
 CREATE INDEX idx_shows_first_air_date ON shows (first_air_date);

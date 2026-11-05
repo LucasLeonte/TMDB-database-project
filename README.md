@@ -34,7 +34,7 @@ rechtstreekse databaseverbinding.
 - Complexe `SELECT`-query's met `JOIN`, subqueries en `GROUP BY`.
 - **Views** (5) voor showoverzichten, netwerkstatistieken, genrestatistieken,
   topshows per genre en veilige gebruikersgegevens.
-- **Indexen** (12) voor substring-zoekopdrachten (GIN), datums, scores en koppeltabellen.
+- **Indexen** (14) voor substring-zoekopdrachten (GIN), datums, scores en koppeltabellen.
 - **Sequences** (7) via PostgreSQL identity columns voor alle dimensietabellen.
 - **Databasebeveiliging** met rollen, privileges en Row-Level Security (RLS).
 
