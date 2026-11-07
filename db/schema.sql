@@ -361,6 +361,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- Verwijder bestaande indexen indien ze al bestaan
 DROP INDEX IF EXISTS idx_shows_name;
 DROP INDEX IF EXISTS idx_shows_original_name;
+DROP INDEX IF EXISTS idx_networks_name;
 DROP INDEX IF EXISTS idx_production_companies_name;
 DROP INDEX IF EXISTS idx_creators_name;
 DROP INDEX IF EXISTS idx_shows_first_air_date;
@@ -376,12 +377,11 @@ DROP INDEX IF EXISTS idx_show_creators_creator_id;
 
 -- Zoeken op naam / titels: GIN indexen met pg_trgm
 -- Maakt snelle ILIKE '%...%' (substring), regex en trigram fuzzy searches mogelijk
-CREATE INDEX idx_shows_name           ON shows USING gin (name gin_trgm_ops);
-CREATE INDEX idx_shows_original_name  ON shows USING gin (original_name gin_trgm_ops);
-CREATE INDEX idx_production_companies_name
-    ON production_companies USING gin (name gin_trgm_ops);
-CREATE INDEX idx_creators_name
-    ON creators USING gin (name gin_trgm_ops);
+CREATE INDEX idx_shows_name                ON shows USING gin (name gin_trgm_ops);
+CREATE INDEX idx_shows_original_name       ON shows USING gin (original_name gin_trgm_ops);
+CREATE INDEX idx_networks_name             ON networks USING gin (name gin_trgm_ops);
+CREATE INDEX idx_production_companies_name ON production_companies USING gin (name gin_trgm_ops);
+CREATE INDEX idx_creators_name             ON creators USING gin (name gin_trgm_ops);
 
 -- Sorteren / filteren op datum (B-Tree)
 CREATE INDEX idx_shows_first_air_date ON shows (first_air_date);
@@ -391,8 +391,7 @@ CREATE INDEX idx_shows_last_air_date  ON shows (last_air_date);
 CREATE INDEX idx_shows_popularity     ON shows (popularity DESC);
 CREATE INDEX idx_shows_vote_average   ON shows (vote_average DESC);
 
--- Koppeltabellen: snel opzoeken per show (FK-kant al gedekt door PK;
--- extra index op de andere kant voor reverse-lookup)
+-- Koppeltabellen: extra index voor reverse-lookups (show_id is al gedekt door de composite PK)
 CREATE INDEX idx_show_languages_language_id   ON show_languages            (language_id);
 CREATE INDEX idx_show_genres_genre_id         ON show_genres               (genre_id);
 CREATE INDEX idx_show_networks_network_id     ON show_networks             (network_id);
