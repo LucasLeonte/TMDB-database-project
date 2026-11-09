@@ -512,43 +512,40 @@ COMMENT ON VIEW vw_users_safe IS
 -- ROLLEN & RECHTEN  (Database Security)
 -- =============================================================================
 
--- Verwijder eventueel bestaande rollen (mag falen als ze niet bestaan)
-DO $$
-BEGIN
-    -- readonly_role: data-analisten, mogen alleen lezen
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly_role') THEN
-        CREATE ROLE readonly_role NOLOGIN;
-    END IF;
+-- Maak rollen alleen aan als ze nog niet bestaan.
+-- \gexec voert de DDL buiten een PL/pgSQL-blok uit (DDL in PL/SQL is niet toegestaan).
+SELECT 'CREATE ROLE readonly_role NOLOGIN;'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly_role');
+\gexec
 
-    -- analyst_role: mag ook views aanmaken, maar geen DML op kerntabellen
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'analyst_role') THEN
-        CREATE ROLE analyst_role NOLOGIN;
-    END IF;
+SELECT 'CREATE ROLE analyst_role NOLOGIN;'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'analyst_role');
+\gexec
 
-    -- app_role: back-end applicatie (INSERT/UPDATE/DELETE op user_favorites)
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_role') THEN
-        CREATE ROLE app_role NOLOGIN;
-    END IF;
+SELECT 'CREATE ROLE app_role NOLOGIN;'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_role');
+\gexec
 
-    -- admin_role: volledige toegang (DBA)
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role') THEN
-        CREATE ROLE admin_role NOLOGIN;
-    END IF;
+SELECT 'CREATE ROLE admin_role NOLOGIN;'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_role');
+\gexec
 
-    -- Concrete login-gebruikers (wachtwoorden zijn dummy-credentials)
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly_user') THEN
-        CREATE ROLE readonly_user LOGIN PASSWORD 'readonly_secret';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'analyst_user') THEN
-        CREATE ROLE analyst_user LOGIN PASSWORD 'analyst_secret';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user') THEN
-        CREATE ROLE app_user LOGIN PASSWORD 'app_secret';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user') THEN
-        CREATE ROLE admin_user LOGIN PASSWORD 'admin_secret';
-    END IF;
-END $$;
+-- Concrete login-gebruikers (wachtwoorden zijn dummy-credentials)
+SELECT 'CREATE ROLE readonly_user LOGIN PASSWORD ''readonly_secret'';'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'readonly_user');
+\gexec
+
+SELECT 'CREATE ROLE analyst_user LOGIN PASSWORD ''analyst_secret'';'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'analyst_user');
+\gexec
+
+SELECT 'CREATE ROLE app_user LOGIN PASSWORD ''app_secret'';'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user');
+\gexec
+
+SELECT 'CREATE ROLE admin_user LOGIN PASSWORD ''admin_secret'';'
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin_user');
+\gexec
 
 -- Rol-hiërarchie koppelen
 GRANT readonly_role TO analyst_role;   -- analisten erven leesrechten
