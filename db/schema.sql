@@ -650,7 +650,7 @@ INSERT INTO shows (
     type
 )
 VALUES
-    (1399,  'Game of Thrones',       'Game of Thrones',       8,  73, 21857, 8.442, '2011-04-17', '2019-05-19', FALSE, 1083.917, 0,   'Ended',          'Scripted'),
+    (1399,  'Game of Thrones',        'Game of Thrones',       8,  73, 21857, 8.442, '2011-04-17', '2019-05-19', FALSE, 1083.917, 0,   'Ended',          'Scripted'),
     (71446, 'Money Heist',            'La Casa de Papel',      3,  41, 17836, 8.257, '2017-05-02', '2021-12-03', FALSE, 96.354,   70,  'Ended',          'Scripted'),
     (66732, 'Stranger Things',        'Stranger Things',        4,  34, 16161, 8.624, '2016-07-15', '2022-07-01', TRUE,  185.711,  0,   'Returning Series','Scripted'),
     (1402,  'The Walking Dead',       'The Walking Dead',      11, 177, 15432, 8.121, '2010-10-31', '2022-11-20', FALSE, 489.746,  42,  'Ended',          'Scripted'),
